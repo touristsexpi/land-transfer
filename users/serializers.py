@@ -38,7 +38,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     #     read_only=True,
     #     slug_field="zupin")
 
-    property = serializers.ReadOnlyField(read_only=True)
+    property = PropertySerializer(read_only=True)
     transferor = CustomerUserSerializer(many=True, read_only=True)
     transferee = CustomerUserSerializer(many=True, read_only=True)
     # transferee = serializers.SlugRelatedField(
