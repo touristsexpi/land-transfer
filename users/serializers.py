@@ -52,9 +52,9 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        # fields = '__all__'
-        fields = ('id', 'type', 'form_number', 'registration_number', 'property', 'file_path',
-                  'purchase_price', 'received_from', 'transferee', 'transferor', 'notes', 'creator', 'creator_id',)
+        fields = '__all__'
+        # fields = ('id', 'type', 'form_number', 'registration_number', 'property', 'file_path',
+        #           'purchase_price', 'received_from', 'transferee', 'transferor', 'notes', 'creator', 'creator_id',)
 
 
 class TransactionAssignmentSerializer(serializers.ModelSerializer):
