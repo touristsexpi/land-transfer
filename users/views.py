@@ -1,8 +1,8 @@
 # from django.contrib.auth.models import User
 from rest_framework import viewsets, generics
 from rest_framework import permissions
-from users.models import Party, StaffUser, Transaction, TransactionAssignment, Inspection
-from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, TransactionSerializer, UserSerializer, CustomerUserSerializer, StaffUserSerializer
+from users.models import Party, StaffUser, Transaction, TransactionAssignment, Inspection, Property
+from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, TransactionSerializer, UserSerializer, CustomerUserSerializer, StaffUserSerializer, PropertySerializer
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -37,6 +37,12 @@ class StaffUserViewSet(viewsets.ModelViewSet):
     queryset = StaffUser.objects.all()
     serializer_class = StaffUserSerializer
     # permission_classes = [IsStaffUser]
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class PropertyViewSet(viewsets.ModelViewSet):
+    queryset = Property.objects.all()
+    serializer_class = PropertySerializer
     permission_classes = [permissions.IsAuthenticated]
 
 

@@ -18,6 +18,8 @@ router.register(r'transaction_approval',
                 views.TransactionVerificationViewSet, basename='transaction-approval')
 router.register(r'inspections', views.InspectionViewSet,
                 basename='inspections')
+router.register(r'properties', views.PropertyViewSet,
+                basename='property')
 
 
 # Wire up our API using automatic URL routing.
