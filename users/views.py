@@ -89,12 +89,14 @@ class TransactionVerificationViewSet(viewsets.ModelViewSet):
 class TransactionAssignmentViewSet(viewsets.ModelViewSet):
     queryset = TransactionAssignment.objects.all()
     serializer_class = TransactionAssignmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
     # http_method_names = ['get', 'post', 'head']
 
 
 class InspectionViewSet(viewsets.ModelViewSet):
     queryset = Inspection.objects.all()
     serializer_class = InspectionSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
         inspection = serializer.save()
