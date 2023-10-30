@@ -7,13 +7,7 @@ from users.models import Party, Property, StaffUser, Transaction, TransactionAss
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ['url', 'username', 'email', 'groups']
-
-
-class GroupSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Group
-        fields = ['url', 'name']
+        fields = ['url', 'username', 'email',]
 
 
 class CustomerUserSerializer(serializers.ModelSerializer):
@@ -27,7 +21,9 @@ class CustomerUserSerializer(serializers.ModelSerializer):
 class StaffUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = StaffUser
-        fields = '__all__'
+        # fields = '__all__'
+        fields = ('id', 'first_name', 'middle_name', 'last_name',
+                  'email', 'phone_number', 'department', 'employee_id', )
 
 
 class PropertySerializer(serializers.ModelSerializer):
