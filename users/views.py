@@ -1,8 +1,8 @@
-from django.contrib.auth.models import User, Group
+# from django.contrib.auth.models import User
 from rest_framework import viewsets, generics
 from rest_framework import permissions
 from users.models import Party, StaffUser, Transaction, TransactionAssignment, Inspection
-from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, TransactionSerializer, UserSerializer, GroupSerializer, CustomerUserSerializer, StaffUserSerializer
+from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, TransactionSerializer, UserSerializer, CustomerUserSerializer, StaffUserSerializer
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -23,15 +23,6 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
-class GroupViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows groups to be viewed or edited.
-    """
-    queryset = Group.objects.all()
-    serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
