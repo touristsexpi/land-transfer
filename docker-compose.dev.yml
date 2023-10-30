@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: api
+    volumes:
+      - .:/core
+      - static_volume:/core/static
+    ports:
+      - "3050:5000"
+    restart: unless-stopped
+
+volumes:
+  static_volume:
