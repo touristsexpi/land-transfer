@@ -2,7 +2,8 @@
 from rest_framework import viewsets, generics
 from rest_framework import permissions
 from users.models import Party, StaffUser, Transaction, TransactionAssignment, Inspection, Property
-from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, TransactionSerializer, UserSerializer, CustomerUserSerializer, StaffUserSerializer, PropertySerializer
+from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, TransactionWriteSerializer, UserSerializer, TransactionReadSerializer, CustomerUserSerializer, StaffUserSerializer, PropertySerializer
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -51,7 +52,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     Register viewset for adding a transaction
     """
     queryset = Transaction.objects.all().order_by("-created_at")
-    serializer_class = TransactionSerializer
+    serializer_class = TransactionWriteSerializer
     parser_classes = (MultiPartParser, FormParser)
     # add register's permissions
     # permission_classes = [permissions.IsAuthenticatedOrReadOnly]

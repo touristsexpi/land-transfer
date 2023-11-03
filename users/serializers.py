@@ -54,7 +54,11 @@ class PropertySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class TransactionSerializer(serializers.ModelSerializer):
+class TransactionReadSerializer(serializers.ModelSerializer):
+    pass
+
+
+class TransactionWriteSerializer(serializers.ModelSerializer):
     """
     Serializer class for Property Transaction
     """
