@@ -204,7 +204,7 @@ class Transaction(models.Model):
                           primary_key=True, editable=False, db_index=True)
     form_number = models.CharField(max_length=20, unique=True)
     registration_number = models.CharField(max_length=30, unique=True)
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    property = models.OneToOneField(Property, on_delete=models.CASCADE)
     type = models.CharField(max_length=50, choices=TRANSACTION_TYPE_CHOICES)
     received_from = models.CharField(max_length=50)
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2)

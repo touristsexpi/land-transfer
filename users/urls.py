@@ -14,8 +14,8 @@ router.register(r'task_assignments',
                 views.TransactionAssignmentViewSet, basename='task_assignments')
 router.register(r'user_assigned_transactions',
                 views.UserAssignedTransactionsViewSet, basename='user-assigned-transactions')
-router.register(r'transaction_approval',
-                views.TransactionVerificationViewSet, basename='transaction-approval')
+router.register(r'transaction_verification',
+                views.TransactionVerificationViewSet, basename='transaction-verification')
 router.register(r'inspections', views.InspectionViewSet,
                 basename='inspections')
 router.register(r'properties', views.PropertyViewSet,

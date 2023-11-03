@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import MethodNotAllowed
 
-from users.permissions import CanUpdateField
+from users.permissions import CanUpdateField, ReadOnlyOrPartialUpdatePermission
 
 # from rest_framework.permissions import IsAuthenticated, AllowAny  # NOQA
 from rest_framework.response import Response
@@ -62,9 +62,9 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     # coordinator's view
     # TODO:Find a better way to handle this
-    @action(detail=False, methods=['get', 'post'], url_path=r'approved')
-    def approved(self, request):
-        queryset = self.queryset.filter(is_approved=True)
+    @action(detail=False, methods=['get', 'post'], url_path=r'verified')
+    def verified(self, request):
+        queryset = self.queryset.filter(is_verified=True)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -73,7 +73,7 @@ class TransactionVerificationViewSet(viewsets.ModelViewSet):
     """ View for ES to approve transactions """
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
-    # permission_classes = [CanUpdateField]
+    permission_classes = [ReadOnlyOrPartialUpdatePermission]
 
     def partial_update(self, request, *args, **kwargs):
         # Get the instance to be updated
@@ -90,7 +90,7 @@ class TransactionAssignmentViewSet(viewsets.ModelViewSet):
     queryset = TransactionAssignment.objects.all()
     serializer_class = TransactionAssignmentSerializer
     permission_classes = [permissions.IsAuthenticated]
-    # http_method_names = ['get', 'post', 'head']
+    # http_method_names = ['get','post','retrieve','put','patch']
 
 
 class InspectionViewSet(viewsets.ModelViewSet):

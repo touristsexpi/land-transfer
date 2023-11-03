@@ -14,16 +14,38 @@ class CustomerUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Party
         # fields = '__all__'
-        fields = ('id', 'first_name', 'middle_name', 'last_name', 'identification', 'email', 'phone_number', 'dob', 'gender',
-                  'address', 'city', 'post_code', 'natural_person', 'citizenship', )
+        fields = (
+            'id',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'identification',
+            'email',
+            'phone_number',
+            'dob',
+            'gender',
+            'address',
+            'city',
+            'post_code',
+            'natural_person',
+            'citizenship',
+        )
 
 
 class StaffUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = StaffUser
         # fields = '__all__'
-        fields = ('id', 'first_name', 'middle_name', 'last_name',
-                  'email', 'phone_number', 'department', 'employee_id', )
+        fields = (
+            'id',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'email',
+            'phone_number',
+            'department',
+            'employee_id',
+        )
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -33,18 +55,13 @@ class PropertySerializer(serializers.ModelSerializer):
 
 
 class TransactionSerializer(serializers.ModelSerializer):
-    # property = serializers.SlugRelatedField(
-    #     many=False,
-    #     read_only=True,
-    #     slug_field="zupin")
+    """
+    Serializer class for Property Transaction
+    """
 
-    property = PropertySerializer(read_only=True)
+    property = PropertySerializer()
     transferor = CustomerUserSerializer(many=True, read_only=True)
     transferee = CustomerUserSerializer(many=True, read_only=True)
-    # transferee = serializers.SlugRelatedField(
-    # many=True,
-    # read_only=True,
-    # slug_field="identification")
 
     creator = serializers.ReadOnlyField(source='created_by.email')
     creator_id = serializers.ReadOnlyField(
@@ -55,6 +72,32 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = '__all__'
         # fields = ('id', 'type', 'form_number', 'registration_number', 'property', 'file_path',
         #           'purchase_price', 'received_from', 'transferee', 'transferor', 'notes', 'creator', 'creator_id',)
+
+    def create(self, validated_data):
+        property_data = validated_data.pop('property')
+
+        # create a new property
+        property = Property.objects.create(**property_data)
+
+        # create a new transaction
+        transaction = Transaction.objects.create(
+            property=property, **validated_data)
+        return transaction
+
+    def update(self, instance, validated_data):
+        property_data = validated_data.pop('property')
+
+        property = instance.property
+
+        for attr, value in property_data.items():
+            setattr(property, attr, value)
+        property.save()
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
 
 
 class TransactionAssignmentSerializer(serializers.ModelSerializer):
@@ -68,8 +111,12 @@ class TransactionAssignmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransactionAssignment
-        fields = ('transaction', 'assigned_department',
-                  'assigned_person', 'assigned_by')
+        fields = (
+            'transaction',
+            'assigned_department',
+            'assigned_person',
+            'assigned_by'
+        )
 
 
 class InspectionSerializer(serializers.ModelSerializer):
