@@ -73,7 +73,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 class TransactionVerificationViewSet(viewsets.ModelViewSet):
     """ View for ES to approve transactions """
     queryset = Transaction.objects.all()
-    serializer_class = TransactionSerializer
+    serializer_class = TransactionWriteSerializer
     permission_classes = [ReadOnlyOrPartialUpdatePermission]
 
     def partial_update(self, request, *args, **kwargs):
