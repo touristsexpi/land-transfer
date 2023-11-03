@@ -72,6 +72,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = '__all__'
         # fields = ('id', 'type', 'form_number', 'registration_number', 'property', 'file_path',
         #           'purchase_price', 'received_from', 'transferee', 'transferor', 'notes', 'creator', 'creator_id',)
+        read_only_fields = ["created_at", "created_by",]
 
     def create(self, validated_data):
         property_data = validated_data.pop('property')
