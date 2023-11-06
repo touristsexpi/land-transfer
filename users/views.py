@@ -2,7 +2,7 @@
 from rest_framework import viewsets, generics
 from rest_framework import permissions
 from users.models import Party, StaffUser, Transaction, TransactionAssignment, Inspection, Property
-from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, TransactionWriteSerializer, UserSerializer, TransactionReadSerializer, CustomerUserSerializer, StaffUserSerializer, PropertySerializer
+from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, WriteTransactionSerializer, UserSerializer, ReadTransactionSerializer, CustomerUserSerializer, StaffUserSerializer, PropertySerializer
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -11,7 +11,6 @@ from rest_framework.exceptions import MethodNotAllowed
 
 from users.permissions import CanUpdateField, ReadOnlyOrPartialUpdatePermission
 
-# from rest_framework.permissions import IsAuthenticated, AllowAny  # NOQA
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
@@ -49,14 +48,26 @@ class PropertyViewSet(viewsets.ModelViewSet):
 
 class TransactionViewSet(viewsets.ModelViewSet):
     """ 
-    Register viewset for adding a transaction
+    View for managing property transaction
     """
     queryset = Transaction.objects.all().order_by("-created_at")
-    serializer_class = TransactionWriteSerializer
+    # serializer_class = TransactionWriteSerializer # I now use get_serializer_class
     parser_classes = (MultiPartParser, FormParser)
-    # add register's permissions
-    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return WriteTransactionSerializer
+        return ReadTransactionSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)  # NOQA
+        else:
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # NOQA
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -70,10 +81,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# TODO: change this view to a generic view
 class TransactionVerificationViewSet(viewsets.ModelViewSet):
-    """ View for ES to approve transactions """
+    """ 
+    View for ES to approve transactions 
+    """
     queryset = Transaction.objects.all()
-    serializer_class = TransactionWriteSerializer
+    serializer_class = WriteTransactionSerializer
     permission_classes = [ReadOnlyOrPartialUpdatePermission]
 
     def partial_update(self, request, *args, **kwargs):
