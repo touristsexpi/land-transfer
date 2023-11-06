@@ -75,51 +75,8 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
     transferor = CustomerUserSerializer(many=True)
     transferee = CustomerUserSerializer(many=True)
 
-    def create(self, validated_data):
-        property_data = validated_data.pop('property')
-        transferor_data = validated_data.pop('transferor')
-        transferee_data = validated_data.pop('transferee')
-
-        # create property, transferor and transferee
-        property = Property.objects.create(**property_data)
-        transferor = Party.objects.create(**transferor_data)
-        transferee = Party.objects.create(**transferee_data)
-
-        # create a new transaction
-        transaction = Transaction.objects.create(
-            property=property, transferor=transferor, transferee=transferee, **validated_data)
-        return transaction
-
-    def update(self, instance, validated_data):
-        property_data = validated_data.pop('property')
-        transferor_data = validated_data.pop('transferor')
-        transferee_data = validated_data.pop('transferee')
-
-        property = instance.property
-        transferee = instance.transferee
-        transferor = instance.transferor
-
-        for attr, value in transferor_data.items():
-            setattr(property, attr, value)
-        property.save()
-
-        for attr, value in transferee_data.items():
-            setattr(property, attr, value)
-        property.save()
-
-        for attr, value in property_data.items():
-            setattr(property, attr, value)
-        property.save()
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        return instance
-
     class Meta:
         model = Transaction
-        # fields = '__all__'
         fields = ('id',
                   'type',
                   'form_number',
@@ -130,9 +87,49 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
                   'received_from',
                   'transferee',
                   'transferor',
-                  'notes',)
+                  'notes',
+                  )
         read_only_fields = ["created_at", "created_by",]
         # exclude = ['creator_id']
+
+    def to_internal_value(self, data):
+        property_data = data.pop('property', {})
+        transferors_data = data.pop('transferor', [])
+        transferees_data = data.pop('transferee', [])
+
+        instance = super().to_internal_value(data)
+
+        if 'property' in instance:
+            property_instance = instance.pop('property')
+            PropertySerializer(property_instance, data=property_data).save()
+
+        for transferor_data in transferors_data:
+            if 'id' in transferor_data:
+                transferor = Party.objects.get(id=transferor_data['id'])
+                CustomerUserSerializer(transferor, data=transferor_data).save()
+            else:
+                instance.transferor.create(**transferors_data)
+
+        for transferee_data in transferees_data:
+            if 'id' in transferee_data:
+                transferee = Party.objects.get(id=transferee_data['id'])
+                CustomerUserSerializer(transferee, data=transferee_data).save()
+            else:
+                instance.transferee.create(**transferees_data)
+
+        return instance
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        data['property'] = PropertySerializer(instance.property).data
+
+        data['transferor'] = CustomerUserSerializer(
+            instance.transferor.all(), many=True).data
+        data['transferee'] = CustomerUserSerializer(
+            instance.transferee.all(), many=True).data
+
+        return data
 
 
 class TransactionAssignmentSerializer(serializers.ModelSerializer):
