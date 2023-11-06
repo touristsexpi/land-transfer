@@ -178,7 +178,7 @@ class Property(models.Model):
         max_length=50, verbose_name="Property Type", choices=PROPERTY_TYPE_CHOICES)
     ownership_type = models.CharField(
         max_length=50, verbose_name="Property Ownership", choices=OWNERSHIP_TYPE_CHOICES)
-    area = models.DecimalField(max_digits=5, decimal_places=2)
+    area = models.DecimalField(max_digits=9, decimal_places=3)
     locality = models.CharField(max_length=30)
     district = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True)

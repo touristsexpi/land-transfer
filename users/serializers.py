@@ -58,6 +58,8 @@ class ReadTransactionSerializer(serializers.ModelSerializer):
     property = PropertySerializer()
     transferor = CustomerUserSerializer(many=True, read_only=True)
     transferee = CustomerUserSerializer(many=True, read_only=True)
+    creator_name = serializers.ReadOnlyField(
+        source='created_by.get_full_name')
 
     class Meta:
         model = Transaction
@@ -72,10 +74,6 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
     property = PropertySerializer()
     transferor = CustomerUserSerializer(many=True, read_only=True)
     transferee = CustomerUserSerializer(many=True, read_only=True)
-
-    creator = serializers.ReadOnlyField(source='created_by.email')
-    creator_id = serializers.ReadOnlyField(
-        source='created_by.get_full_name')  # it was phone_number previously
 
     def create(self, validated_data):
         property_data = validated_data.pop('property')
@@ -105,9 +103,18 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        fields = '__all__'
-        # fields = ('id', 'type', 'form_number', 'registration_number', 'property', 'file_path',
-        #           'purchase_price', 'received_from', 'transferee', 'transferor', 'notes', 'creator', 'creator_id',)
+        # fields = '__all__'
+        fields = ('id',
+                  'type',
+                  'form_number',
+                  'registration_number',
+                  'property',
+                  'file_path',
+                  'purchase_price',
+                  'received_from',
+                  'transferee',
+                  'transferor',
+                  'notes',)
         read_only_fields = ["created_at", "created_by",]
         # exclude = ['creator_id']
 
