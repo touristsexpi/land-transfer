@@ -75,7 +75,7 @@ class ReadTransactionSerializer(serializers.ModelSerializer):
                   'transferee',
                   'transferor',
                   'notes',
-                  'creator_name'
+                  'creator_name',
                   'created_at',
                   )
 
