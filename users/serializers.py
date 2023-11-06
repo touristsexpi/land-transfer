@@ -72,24 +72,40 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
     """
 
     property = PropertySerializer()
-    transferor = CustomerUserSerializer(many=True, read_only=True)
-    transferee = CustomerUserSerializer(many=True, read_only=True)
+    transferor = CustomerUserSerializer(many=True)
+    transferee = CustomerUserSerializer(many=True)
 
     def create(self, validated_data):
         property_data = validated_data.pop('property')
+        transferor_data = validated_data.pop('transferor')
+        transferee_data = validated_data.pop('transferee')
 
-        # create a new property
+        # create property, transferor and transferee
         property = Property.objects.create(**property_data)
+        transferor = Party.objects.create(**transferor_data)
+        transferee = Party.objects.create(**transferee_data)
 
         # create a new transaction
         transaction = Transaction.objects.create(
-            property=property, **validated_data)
+            property=property, transferor=transferor, transferee=transferee, **validated_data)
         return transaction
 
     def update(self, instance, validated_data):
         property_data = validated_data.pop('property')
+        transferor_data = validated_data.pop('transferor')
+        transferee_data = validated_data.pop('transferee')
 
         property = instance.property
+        transferee = instance.transferee
+        transferor = instance.transferor
+
+        for attr, value in transferor_data.items():
+            setattr(property, attr, value)
+        property.save()
+
+        for attr, value in transferee_data.items():
+            setattr(property, attr, value)
+        property.save()
 
         for attr, value in property_data.items():
             setattr(property, attr, value)
