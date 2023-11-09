@@ -41,7 +41,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     def get_full_name(self):
-        return f'{self.first_name} {self.last_name}'
+        return self.email
 
     def get_short_name(self):
         return self.email
@@ -123,7 +123,7 @@ class Party(CustomUser):
         verbose_name_plural = 'Parties'
 
     def __str__(self):
-        return self.first_name
+        return f'{self.first_name} {self.last_name}'
 
 
 class StaffUser(CustomUser):
@@ -204,7 +204,8 @@ class Transaction(models.Model):
                           primary_key=True, editable=False, db_index=True)
     form_number = models.CharField(max_length=20, unique=True)
     registration_number = models.CharField(max_length=30, unique=True)
-    property = models.OneToOneField(Property, on_delete=models.CASCADE)
+    property = models.OneToOneField(
+        Property, on_delete=models.CASCADE)
     type = models.CharField(max_length=50, choices=TRANSACTION_TYPE_CHOICES)
     received_from = models.CharField(max_length=50)
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -212,10 +213,9 @@ class Transaction(models.Model):
         Party, related_name="transferor_applications")
     transferee = models.ManyToManyField(
         Party, related_name="transferee_applications")
-    file_path = models.FileField(upload_to=upload_to, blank=True, null=True)
+    # file_path = models.FileField(upload_to=upload_to, blank=True, null=True)
     # stage = models.CharField(max_length=50, choices=STAGE_CHOICES, default='received')
     # current_stage = models.CharField(max_length=50, choices=STAGE_CHOICES, default='received')
-    # assigned_to = models.ForeignKey(StaffUser, related_name="approved_transactions", on_delete=models.SET_NULL, null=True,)
     is_verified = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=False)
     is_valuation_done = models.BooleanField(default=False)
@@ -229,11 +229,12 @@ class Transaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     # updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        StaffUser, on_delete=models.SET_NULL, null=True, related_name="created_transactions")
+        StaffUser, on_delete=models.SET_NULL, blank=True, null=True, related_name="created_transactions")
 
     class Meta:
         verbose_name = 'Transaction'
         verbose_name_plural = 'Transactions'
+        # ordering = ('-created_at',)
 
     def __str__(self):
         return self.registration_number
@@ -245,7 +246,7 @@ class TransactionAssignment(models.Model):
         StaffUser, on_delete=models.CASCADE, related_name="assigned_user_transactions")
     created_at = models.DateTimeField(auto_now_add=True)
     assigned_by = models.ForeignKey(
-        StaffUser, on_delete=models.SET_NULL, null=True, related_name="assigned_by_user_transactions")
+        StaffUser, on_delete=models.SET_NULL, blank=True, null=True, related_name="assigned_by_user_transactions")
 
     class Meta:
         verbose_name = 'Transaction Assignment'
@@ -263,7 +264,7 @@ class Inspection(models.Model):
     inspected_date = models.DateField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     closed = models.BooleanField(default=False)
-    # inspected_by = models.ForeignKey(StaffUser,on_delete=models.SET_NULL)
+    # inspected_by = models.ForeignKey(StaffUser,on_delete=models.SET_NULL, blank=True, null=True)
 
     class Meta:
         verbose_name = 'Inspection'

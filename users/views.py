@@ -2,7 +2,7 @@
 from rest_framework import viewsets, generics
 from rest_framework import permissions, status
 from users.models import Party, StaffUser, Transaction, TransactionAssignment, Inspection, Property
-from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, WriteTransactionSerializer, UserSerializer, ReadTransactionSerializer, CustomerUserSerializer, StaffUserSerializer, PropertySerializer
+from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, WriteTransactionSerializer, UserSerializer, ReadTransactionSerializer, PartySerializer, StaffUserSerializer, PropertySerializer
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -28,7 +28,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class CustomerUserViewSet(viewsets.ModelViewSet):
     queryset = Party.objects.all()
-    serializer_class = CustomerUserSerializer
+    serializer_class = PartySerializer
     # permission_classes = [IsParty]
     permission_classes = [permissions.IsAuthenticated]
 
@@ -50,9 +50,9 @@ class TransactionViewSet(viewsets.ModelViewSet):
     """ 
     View for managing property transaction
     """
-    queryset = Transaction.objects.all().order_by("-created_at")
+    queryset = Transaction.objects.all()
     # serializer_class = TransactionWriteSerializer # I now use get_serializer_class
-    parser_classes = (MultiPartParser, FormParser)
+    # parser_classes = (MultiPartParser, FormParser)
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
