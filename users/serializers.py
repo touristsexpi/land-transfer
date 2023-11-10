@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
+from django.db import transaction
 
 from users.models import Party, Property, StaffUser, Transaction, TransactionAssignment, Inspection
 
@@ -107,28 +108,21 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
         transferors_data = validated_data.pop('transferor', [])
         transferees_data = validated_data.pop('transferee', [])
 
-        # Try to find an existing Property instance based on provided data
-        matching_properties = Property.objects.filter(**property_data)
+        with transaction.atomic():
+            property_instance, _ = Property.objects.get_or_create(
+                **property_data)
+            my_transaction = Transaction.objects.create(
+                property=property_instance, **validated_data)
 
-        if matching_properties.exists():
-            # If matching properties exist, use the first one
-            property_instance = matching_properties.first()
-        else:
-            # If no matching properties exist, create a new one
-            property_instance = Property.objects.create(**property_data)
+            for transferor_data in transferors_data:
+                transferor, _ = Party.objects.get_or_create(**transferor_data)
+                my_transaction.transferor.add(transferor)
 
-        transaction = Transaction.objects.create(
-            property=property_instance, **validated_data)
+            for transferee_data in transferees_data:
+                transferee, _ = Party.objects.get_or_create(**transferee_data)
+                my_transaction.transferee.add(transferee)
 
-        for transferor_data in transferors_data:
-            transferor = Party.objects.create(**transferor_data)
-            transaction.transferor.add(transferor)
-
-        for transferee_data in transferees_data:
-            transferee = Party.objects.create(**transferee_data)
-            transaction.transferee.add(transferee)
-
-        return transaction
+        return my_transaction
 
     def update(self, instance, validated_data):
         property_data = validated_data.pop('property', {})
@@ -142,7 +136,7 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
         # Update the related property instance
         property_instance = instance.property
         if property_instance:
-            PropertySerializer(propoertyinstance, data=property_data)
+            PropertySerializer(property_instance, data=property_data)
             property_instance.save()
 
         # Update the related transferor instances
