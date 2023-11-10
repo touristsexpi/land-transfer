@@ -125,38 +125,38 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
         return my_transaction
 
     def update(self, instance, validated_data):
-        property_data = validated_data.pop('property', {})
-        transferors_data = validated_data.pop('transferor', [])
-        transferees_data = validated_data.pop('transferee', [])
+        # Update fields of the Transaction model
+        instance.type = validated_data.get('type', instance.type)
+        instance.form_number = validated_data.get(
+            'form_number', instance.form_number)
+        instance.registration_number = validated_data.get(
+            'registration_number', instance.registration_number)
+        instance.purchase_price = validated_data.get(
+            'purchase_price', instance.purchase_price)
+        instance.received_from = validated_data.get(
+            'received_from', instance.received_from)
+        instance.notes = validated_data.get('notes', instance.notes)
 
-        # Update transaction fields
-        instance.__dict__.update(validated_data)
-        instance.save()
+        # Update the Property instance
+        property_data = validated_data.get('property', {})
+        property_instance, _ = Property.objects.get_or_create(**property_data)
+        instance.property = property_instance
 
-        # Update the related property instance
-        property_instance = instance.property
-        if property_instance:
-            PropertySerializer(property_instance, data=property_data)
-            property_instance.save()
-
-        # Update the related transferor instances
+        # Update transferors
+        transferors_data = validated_data.get('transferor', [])
+        instance.transferor.clear()
         for transferor_data in transferors_data:
-            if 'id' in transferor_data:
-                transferor = Party.objects.get(id=transferor_data['id'])
-                PartySerializer(transferor, data=transferor_data).update(
-                    transferor, transferor_data)
-            else:
-                instance.transferor.create(**transferor_data)
+            transferor, _ = Party.objects.get_or_create(**transferor_data)
+            instance.transferor.add(transferor)
 
-        # Update the related transferee instances
+        # Update transferees
+        transferees_data = validated_data.get('transferee', [])
+        instance.transferee.clear()
         for transferee_data in transferees_data:
-            if 'id' in transferee_data:
-                transferee = Party.objects.get(id=transferee_data['id'])
-                PartySerializer(transferee, data=transferee_data).update(
-                    transferee, transferee_data)
-            else:
-                instance.transferee.create(**transferee_data)
+            transferee, _ = Party.objects.get_or_create(**transferee_data)
+            instance.transferee.add(transferee)
 
+        instance.save()
         return instance
 
 

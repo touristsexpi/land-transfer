@@ -187,6 +187,7 @@ class Property(models.Model):
     class Meta:
         verbose_name = 'Property'
         verbose_name_plural = 'Properties'
+        ordering = ('created_at',)
 
     def __str__(self):
         return self.zupin
@@ -234,7 +235,7 @@ class Transaction(models.Model):
     class Meta:
         verbose_name = 'Transaction'
         verbose_name_plural = 'Transactions'
-        # ordering = ('-created_at',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return self.registration_number
