@@ -56,7 +56,7 @@ class PropertySerializer(serializers.ModelSerializer):
 
 
 class ReadTransactionSerializer(serializers.ModelSerializer):
-    file_path = Base64FileField(required=False)
+    # file_path = Base64FileField(required=False)
     property = PropertySerializer(read_only=True)
     transferor = PartySerializer(many=True, read_only=True)
     transferee = PartySerializer(many=True, read_only=True)
@@ -84,7 +84,7 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
     """
     Serializer class for Property Transaction
     """
-    file_path = Base64FileField(required=False)
+    # file_path = Base64FileField(required=False)
 
     property = PropertySerializer()
     transferor = PartySerializer(many=True)
