@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
 from django.db import transaction
-from drf_extra_fields.fields import Base64FileField
+# from drf_extra_fields.fields import Base64FileField
 
 from users.models import Party, Property, StaffUser, Transaction, TransactionAssignment, Inspection
 
