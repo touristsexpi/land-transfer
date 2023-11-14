@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
 from django.db import transaction
+from drf_extra_fields.fields import Base64FileField
 
 from users.models import Party, Property, StaffUser, Transaction, TransactionAssignment, Inspection
 
@@ -55,7 +56,8 @@ class PropertySerializer(serializers.ModelSerializer):
 
 
 class ReadTransactionSerializer(serializers.ModelSerializer):
-    property = PropertySerializer()
+    file_path = Base64FileField(required=False)
+    property = PropertySerializer(read_only=True)
     transferor = PartySerializer(many=True, read_only=True)
     transferee = PartySerializer(many=True, read_only=True)
     # creator_name = serializers.ReadOnlyField(
@@ -63,7 +65,6 @@ class ReadTransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        # fields = '__all__'
         fields = ('id',
                   'type',
                   'form_number',
@@ -73,6 +74,7 @@ class ReadTransactionSerializer(serializers.ModelSerializer):
                   'received_from',
                   'transferee',
                   'transferor',
+                  'file_path',
                   'notes',
                   'created_at',
                   )
@@ -82,6 +84,7 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
     """
     Serializer class for Property Transaction
     """
+    file_path = Base64FileField(required=False)
 
     property = PropertySerializer()
     transferor = PartySerializer(many=True)
@@ -98,6 +101,7 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
                   'received_from',
                   'transferee',
                   'transferor',
+                  'file_path',
                   'notes',
                   )
         read_only_fields = ["created_at", "created_by",]

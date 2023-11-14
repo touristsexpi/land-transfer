@@ -54,7 +54,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     # serializer_class = TransactionWriteSerializer # I now use get_serializer_class
     # parser_classes = (MultiPartParser, FormParser)
     permission_classes = [permissions.IsAuthenticated]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:

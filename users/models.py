@@ -214,7 +214,7 @@ class Transaction(models.Model):
         Party, related_name="transferor_applications")
     transferee = models.ManyToManyField(
         Party, related_name="transferee_applications")
-    # file_path = models.FileField(upload_to=upload_to, blank=True, null=True)
+    file_path = models.FileField(upload_to=upload_to, blank=True, null=True)
     # stage = models.CharField(max_length=50, choices=STAGE_CHOICES, default='received')
     # current_stage = models.CharField(max_length=50, choices=STAGE_CHOICES, default='received')
     is_verified = models.BooleanField(default=False)
