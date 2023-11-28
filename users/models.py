@@ -1,9 +1,19 @@
 import uuid
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
 from rest_framework import permissions
+from django.utils.translation import gettext_lazy as _
+
+
+def validate_positive(value):
+    if value < 0:
+        raise ValidationError(
+            _('%(value)s is not positive.'),
+            params={"value": value}
+        )
 
 
 class CustomUserManager(BaseUserManager):
@@ -178,7 +188,8 @@ class Property(models.Model):
         max_length=50, verbose_name="Property Type", choices=PROPERTY_TYPE_CHOICES)
     ownership_type = models.CharField(
         max_length=50, verbose_name="Property Ownership", choices=OWNERSHIP_TYPE_CHOICES)
-    area = models.DecimalField(max_digits=9, decimal_places=3)
+    area = models.DecimalField(
+        max_digits=9, decimal_places=3, validators=[validate_positive])
     locality = models.CharField(max_length=30)
     district = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -209,7 +220,8 @@ class Transaction(models.Model):
         Property, on_delete=models.CASCADE)
     type = models.CharField(max_length=50, choices=TRANSACTION_TYPE_CHOICES)
     received_from = models.CharField(max_length=50)
-    purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
+    purchase_price = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[validate_positive])
     transferor = models.ManyToManyField(
         Party, related_name="transferor_applications")
     transferee = models.ManyToManyField(
@@ -242,7 +254,8 @@ class Transaction(models.Model):
 
 
 class TransactionAssignment(models.Model):
-    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE)
+    transaction = models.ForeignKey(
+        Transaction, on_delete=models.CASCADE, related_name="transactions")
     assigned_to = models.ForeignKey(
         StaffUser, on_delete=models.CASCADE, related_name="assigned_user_transactions")
     created_at = models.DateTimeField(auto_now_add=True)

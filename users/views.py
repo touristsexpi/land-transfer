@@ -2,7 +2,7 @@
 from rest_framework import viewsets, generics
 from rest_framework import permissions, status
 from users.models import Party, StaffUser, Transaction, TransactionAssignment, Inspection, Property
-from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, WriteTransactionSerializer, UserSerializer, ReadTransactionSerializer, PartySerializer, StaffUserSerializer, PropertySerializer
+from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, VerifyTransactionSerializer, WriteTransactionSerializer, UserSerializer, ReadTransactionSerializer, PartySerializer, StaffUserSerializer, PropertySerializer
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -74,38 +74,53 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     # coordinator's view
     # TODO:Find a better way to handle this
-    @action(detail=False, methods=['get', 'post'], url_path=r'verified')
-    def verified(self, request):
-        queryset = self.queryset.filter(is_verified=True)
-        serializer = self.get_serializer(queryset, many=True)
+    @action(detail=False, methods=['get', ], url_path=r'un-verified')
+    def un_verified(self, request):
+        unverified = self.queryset.filter(is_verified=False)
+        serializer = VerifyTransactionSerializer(unverified, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['patch'], url_path=r'toggle-verified')
+    def toggle_verified_status(self, request, pk=None):
+        transaction = self.get_object()
 
-# TODO: change this view to a generic view
+        if 'is_verified' in request.data:
+            transaction.is_verified = request.data['is_verified']
+            transaction.save()
+            serializer = VerifyTransactionSerializer(transaction)
+            return Response(serializer.data)
+        return Response({'detail': 'Invalid data for partial update.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class TransactionVerificationViewSet(viewsets.ModelViewSet):
     """ 
     View for ES to approve transactions 
     """
-    queryset = Transaction.objects.all()
-    serializer_class = WriteTransactionSerializer
-    permission_classes = [ReadOnlyOrPartialUpdatePermission]
+    queryset = Transaction.objects.all().filter(is_verified=False)
+    serializer_class = VerifyTransactionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [ReadOnlyOrPartialUpdatePermission]
+    http_method_names = ['get', 'patch']
 
-    def partial_update(self, request, *args, **kwargs):
-        # Get the instance to be updated
-        instance = self.get_object()
+    def perform_update(self, serializer):
+        serializer.save()
 
-        # Update only the 'my_field_to_update' field to True
-        instance.is_verified = True
-        instance.save(update_fields=['is_verified'])
+    # def partial_update(self, request, *args, **kwargs):
+    #     # Get the instance to be updated
+    #     instance = self.get_object()
 
-        return Response(self.get_serializer(instance).data)
+    #     # Update only the 'my_field_to_update' field to True
+    #     instance.is_verified = True
+    #     instance.save(update_fields=['is_verified'])
+
+    #     return Response(self.get_serializer(instance).data)
 
 
 class TransactionAssignmentViewSet(viewsets.ModelViewSet):
-    queryset = TransactionAssignment.objects.all()
+    queryset = TransactionAssignment.objects.all().filter(transaction__is_verified=True)
     serializer_class = TransactionAssignmentSerializer
     permission_classes = [permissions.IsAuthenticated]
-    # http_method_names = ['get','post','retrieve','put','patch']
+    http_method_names = ['get', 'post', 'retrieve', 'put', 'patch']
 
 
 class InspectionViewSet(viewsets.ModelViewSet):

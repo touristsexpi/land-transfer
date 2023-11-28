@@ -77,6 +77,7 @@ class ReadTransactionSerializer(serializers.ModelSerializer):
                   'file_path',
                   'notes',
                   'created_at',
+                  'is_verified',
                   )
 
 
@@ -164,6 +165,25 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
         return instance
 
 
+class VerifyTransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = '__all__'
+        depth = 1
+
+    def update(self, instance, validated_data):
+        # Update the specific field
+        instance.is_verified = validated_data.get(
+            'is_verified', instance.is_verified)
+
+        # Check if the boolean field needs to be toggled
+        # if instance.is_verified == False:
+        # instance.is_verified = True
+
+        instance.save()
+        return instance
+
+
 class TransactionAssignmentSerializer(serializers.ModelSerializer):
 
     assigned_person = serializers.ReadOnlyField(
@@ -175,12 +195,13 @@ class TransactionAssignmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransactionAssignment
-        fields = (
-            'transaction',
-            'assigned_department',
-            'assigned_person',
-            'assigned_by'
-        )
+        # fields = (
+        #     'transaction',
+        #     'assigned_department',
+        #     'assigned_person',
+        #     'assigned_by'
+        # )
+        fields = '__all__'
 
 
 class InspectionSerializer(serializers.ModelSerializer):
