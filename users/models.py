@@ -69,6 +69,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'user'
         verbose_name_plural = 'users'
+        ordering = ('-date_joined',)
 
     def __str__(self):
         return self.email
@@ -157,8 +158,15 @@ class StaffUser(CustomUser):
             # return f'{self.first_name} {self.last_name}'
             return self.email
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+
+        # Save the instance
+        super().save(*args, **kwargs)
 
 # lets us explicitly set upload path and filename
+
+
 def upload_to(instance, filename):
     return 'uploads/{filename}'.format(filename=filename)
 
@@ -255,30 +263,58 @@ class Transaction(models.Model):
 
 class TransactionAssignment(models.Model):
     transaction = models.ForeignKey(
-        Transaction, on_delete=models.CASCADE, related_name="transactions")
-    assigned_to = models.ForeignKey(
-        StaffUser, on_delete=models.CASCADE, related_name="assigned_user_transactions")
+        Transaction, on_delete=models.CASCADE, related_name="assignments")
+    # assigned_to = models.ManyToManyField(
+    #     StaffUser, related_name="assigned_transactions")
+
+    # Mandatory users
+    assigned_to_mandatory = models.ManyToManyField(
+        StaffUser, related_name="assigned_transactions_mandatory")
+
+    # Optional user
+    assigned_to_optional = models.ForeignKey(
+        StaffUser, on_delete=models.SET_NULL, blank=True, null=True, related_name="assigned_transactions_optional")
+
     created_at = models.DateTimeField(auto_now_add=True)
     assigned_by = models.ForeignKey(
-        StaffUser, on_delete=models.SET_NULL, blank=True, null=True, related_name="assigned_by_user_transactions")
+        StaffUser, on_delete=models.SET_NULL, blank=True, null=True, related_name="assigned_by_transactions")
 
     class Meta:
         verbose_name = 'Transaction Assignment'
         verbose_name_plural = 'Transaction Assignments'
+        # unique_together = ['transaction', 'assigned_to_mandatory']
 
     def __str__(self):
         return self.transaction.registration_number
 
+    # def clean(self):
+    #     # Validate the number of assigned users before saving
+    #     max_assigned_users = 3
+
+    #     if self.assigned_to_mandatory.count() != 2:
+    #         raise ValidationError("Exactly two mandatory users are required.")
+
+    #     if self.assigned_to_optional and self.assigned_to_mandatory.count() + 1 > max_assigned_users:
+    #         raise ValidationError(
+    #             f"Only {max_assigned_users} users can be assigned to a transaction.")
+
+    # def save(self, *args, **kwargs):
+    #     self.full_clean()  # Run full validation before saving
+    #     super().save(*args, **kwargs)
+
 
 class Inspection(models.Model):
     transaction_assigned = models.ForeignKey(
-        TransactionAssignment, on_delete=models.CASCADE, related_name="transactions_assignment_inspections")
+        TransactionAssignment, on_delete=models.CASCADE, related_name="transaction_inspections")
     description = models.TextField(blank=True)
-    file_path = models.FileField(upload_to=upload_to, blank=True, null=True)
+    document_file = models.FileField(
+        upload_to=upload_to, blank=True, null=True)
+    # image = models.ImageField(upload_to='images/', blank=True, null=True)
     inspected_date = models.DateField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     closed = models.BooleanField(default=False)
-    # inspected_by = models.ForeignKey(StaffUser,on_delete=models.SET_NULL, blank=True, null=True)
+    inspected_by = models.ForeignKey(
+        StaffUser, on_delete=models.SET_NULL, blank=True, null=True)
 
     class Meta:
         verbose_name = 'Inspection'
@@ -286,3 +322,12 @@ class Inspection(models.Model):
 
     def __str__(self):
         return self.transaction_assigned.transaction.form_number
+
+
+class InspectionImage(models.Model):
+    inspection = models.ForeignKey(Inspection, on_delete=models.CASCADE,
+                                   related_name='images')
+    image = models.ImageField(upload_to="inspections/")
+
+    def __str__(self):
+        return f"Image for {self.inspection.transaction_assigned.transaction}"

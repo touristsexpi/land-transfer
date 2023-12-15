@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import StaffUserCreationForm, StaffUserChangeForm, PartyUserCreationForm, PartyUserChangeForm
-from .models import Party, Property, Transaction, StaffUser, Inspection, TransactionAssignment
+from .models import Party, Property, Transaction, StaffUser, Inspection, TransactionAssignment, InspectionImage
 
 
 class StaffUserAdmin(UserAdmin):
@@ -98,5 +98,6 @@ admin.site.register(Property, PropertyAdmin)
 admin.site.register(Party, PartyUserAdmin)
 admin.site.register(TransactionAssignment)
 admin.site.register(Inspection)
+admin.site.register(InspectionImage)
 
 # admin.site.register(Ownership)

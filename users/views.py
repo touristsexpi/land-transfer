@@ -1,15 +1,16 @@
 # from django.contrib.auth.models import User
-from rest_framework import viewsets, generics
-from rest_framework import permissions, status
-from users.models import Party, StaffUser, Transaction, TransactionAssignment, Inspection, Property
-from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, VerifyTransactionSerializer, WriteTransactionSerializer, UserSerializer, ReadTransactionSerializer, PartySerializer, StaffUserSerializer, PropertySerializer
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, generics, status, permissions
+from users.models import Party, StaffUser, Transaction, TransactionAssignment, Inspection, Property, InspectionImage
+from users.serializers import InspectionSerializer, TransactionAssignmentSerializer, VerifyTransactionSerializer, WriteTransactionSerializer, UserSerializer, ReadTransactionSerializer, PartySerializer, StaffUserSerializer, PropertySerializer, ChangePasswordSerializer
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
 from rest_framework.exceptions import MethodNotAllowed
 
-from users.permissions import CanUpdateField, ReadOnlyOrPartialUpdatePermission
+from users.permissions import CanUpdateField, ReadOnlyOrPartialUpdatePermission, UserPermission
 
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -21,10 +22,34 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
     """
-    queryset = User.objects.all().order_by('-date_joined')
+    queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [UserPermission,]
 
+
+class ChangePasswordView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data)
+
+        if serializer.is_valid():
+            # Check old password
+            if not request.user.check_password(serializer.data.get("old_password")):
+                return Response({"detail": "Invalid old password."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Set new password
+            request.user.set_password(serializer.data.get("new_password"))
+            request.user.save()
+            return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class ChangePasswordView(generics.UpdateAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = ChangePasswordSerializer
+#     # permission_classes = []
 
 class CustomerUserViewSet(viewsets.ModelViewSet):
     queryset = Party.objects.all()
@@ -44,6 +69,9 @@ class PropertyViewSet(viewsets.ModelViewSet):
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    # def perform_create(self, serializer):
+    #     serializer.save(created_by=self.request.user)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
@@ -88,8 +116,8 @@ class TransactionViewSet(viewsets.ModelViewSet):
             transaction.is_verified = request.data['is_verified']
             transaction.save()
             serializer = VerifyTransactionSerializer(transaction)
-            return Response(serializer.data)
-        return Response({'detail': 'Invalid data for partial update.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({'error': 'Invalid data for partial update.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TransactionVerificationViewSet(viewsets.ModelViewSet):
@@ -120,12 +148,17 @@ class TransactionAssignmentViewSet(viewsets.ModelViewSet):
     queryset = TransactionAssignment.objects.all().filter(transaction__is_verified=True)
     serializer_class = TransactionAssignmentSerializer
     permission_classes = [permissions.IsAuthenticated]
-    http_method_names = ['get', 'post', 'retrieve', 'put', 'patch']
+    http_method_names = ['get', 'post', 'retrieve',
+                         'put', 'patch']  # is PATCH necessary?
+
+    # def perform_create(self, serializer):
+    #     serializer.save(creator=self.request.user)
 
 
 class InspectionViewSet(viewsets.ModelViewSet):
     queryset = Inspection.objects.all()
     serializer_class = InspectionSerializer
+    # parser_classes = (MultiPartParser, FormParser, FileUploadParser)
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
@@ -134,6 +167,27 @@ class InspectionViewSet(viewsets.ModelViewSet):
         if transaction:
             transaction.is_valuation_done = True
             transaction.save()
+
+    # def create(self, request, *args, **kwargs):
+    #     item_serializer = self.get_serializer(data=request.data)
+    #     item_serializer.is_valid(raise_exception=True)
+    #     self.perform_create(item_serializer)
+
+    #     # Handle image uploads
+    #     images_data = request.FILES.getlist('image')
+    #     for image_data in images_data:
+    #         InspectionImage.objects.create(
+    #             item=item_serializer.instance, image=image_data)
+
+    #     # Handle PDF upload
+    #     pdf_file = request.FILES.get('file_path')
+    #     if pdf_file:
+    #         inspection_instance = item_serializer.instance
+    #         inspection_instance.file_path = pdf_file
+    #         inspection_instance.save()
+
+    #     headers = self.get_success_headers(item_serializer.data)
+    #     return Response(item_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class UserAssignedTransactionsViewSet(viewsets.ModelViewSet):

@@ -1,21 +1,51 @@
-from django.contrib.auth.models import User, Group
+# from django.contrib.auth.models import User, Group
 from rest_framework import serializers
 from django.db import transaction
+from django.contrib.auth import get_user_model
 # from drf_extra_fields.fields import Base64FileField
 
-from users.models import Party, Property, StaffUser, Transaction, TransactionAssignment, Inspection
+from users.models import Party, Property, StaffUser, Transaction, TransactionAssignment, Inspection, InspectionImage
+
+User = get_user_model()
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ['url', 'username', 'email',]
+        fields = (
+            'url',
+            'phone_number',
+            'email',
+            'password',
+            'is_staff', )
+        extra_kwargs = {"password": {"write_only": True}}
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    # model = User
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+
+# class ChangePasswordSerializer(serializers.ModelSerializer):
+#     password = serializers.CharField(
+#         write_only=True, required=True, )  # validators=[validate_password]
+
+#     class Meta:
+#         model = User
+#         fields = ('password',)
+
+#     def update(self, instance, validated_data):
+
+#         instance.set_password(validated_data['password'])
+#         instance.save()
+
+#         return instance
 
 
 class PartySerializer(serializers.ModelSerializer):
     class Meta:
         model = Party
-        # fields = '__all__'
         fields = (
             'id',
             'first_name',
@@ -32,6 +62,8 @@ class PartySerializer(serializers.ModelSerializer):
             'natural_person',
             'citizenship',
         )
+        # exclude = ['user_permissions', 'groups',]
+        extra_kwargs = {"id": {"read_only": True}}
 
 
 class StaffUserSerializer(serializers.ModelSerializer):
@@ -65,20 +97,20 @@ class ReadTransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        fields = ('id',
-                  'type',
-                  'form_number',
-                  'registration_number',
-                  'property',
-                  'purchase_price',
-                  'received_from',
-                  'transferee',
-                  'transferor',
-                  'file_path',
-                  'notes',
-                  'created_at',
-                  'is_verified',
-                  )
+        fields = (
+            'id',
+            'type',
+            'form_number',
+            'registration_number',
+            'property',
+            'purchase_price',
+            'received_from',
+            'transferee',
+            'transferor',
+            'file_path',
+            'notes',
+            'is_verified',
+        )
 
 
 class WriteTransactionSerializer(serializers.ModelSerializer):
@@ -105,7 +137,7 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
                   'file_path',
                   'notes',
                   )
-        read_only_fields = ["created_at", "created_by",]
+        read_only_fields = ["id", "created_at", "created_by",]
         # exclude = ['creator_id']
 
     def create(self, validated_data):
@@ -166,20 +198,33 @@ class WriteTransactionSerializer(serializers.ModelSerializer):
 
 
 class VerifyTransactionSerializer(serializers.ModelSerializer):
+    property = PropertySerializer(read_only=True)
+    transferor = PartySerializer(many=True, read_only=True)
+    transferee = PartySerializer(many=True, read_only=True)
+
     class Meta:
         model = Transaction
-        fields = '__all__'
-        depth = 1
+        # fields = '__all__'
+        # depth = 1
+        fields = (
+            'form_number',
+            'registration_number',
+            'type',
+            'property',
+            'transferee',
+            'transferor',
+            'received_from',
+            'purchase_price',
+            'file_path',
+            'is_verified',
+            'notes',
+            'created_at',
+            'created_by'
+        )
 
     def update(self, instance, validated_data):
-        # Update the specific field
         instance.is_verified = validated_data.get(
             'is_verified', instance.is_verified)
-
-        # Check if the boolean field needs to be toggled
-        # if instance.is_verified == False:
-        # instance.is_verified = True
-
         instance.save()
         return instance
 
@@ -195,16 +240,63 @@ class TransactionAssignmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransactionAssignment
-        # fields = (
-        #     'transaction',
-        #     'assigned_department',
-        #     'assigned_person',
-        #     'assigned_by'
-        # )
-        fields = '__all__'
+        fields = (
+            'transaction',
+            'assigned_department',
+            'assigned_person',
+            'assigned_by'
+        )
+
+
+class InspectionImageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = InspectionImage
+        fields = ('image',)
 
 
 class InspectionSerializer(serializers.ModelSerializer):
+    images = InspectionImageSerializer(many=True,)
+    # document_file = serializers.FileField(required=False, max_length=None,
+    #   allow_empty_file=True, use_url=True)
+
     class Meta:
         model = Inspection
-        fields = '__all__'
+        fields = (
+            'transaction_assigned',
+            'description',
+            'document_file',
+            'images',
+            'inspected_date',
+        )
+
+    def create(self, validated_data):
+        # images_data = validated_data.pop('image', [])
+        images_data = self.context['request'].FILES.getlist('images', {})
+        document_data = validated_data.pop('document_file', None)
+
+        inspection = Inspection.objects.create(**validated_data)
+
+        if document_data:
+            inspection.document_file = document_data
+            inspection.save()
+
+        for image_data in images_data:
+            InspectionImage.objects.create(
+                inspection=inspection, image=image_data)
+        return inspection
+
+    def update(self, instance, validated_data):
+        images_data = self.context['request'].FILES.getlist('images')
+
+        # Update inspection fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Handle images
+        for image_data in images_data:
+            InspectionImage.objects.create(
+                inspection=instance, image=image_data)
+
+        return instance
